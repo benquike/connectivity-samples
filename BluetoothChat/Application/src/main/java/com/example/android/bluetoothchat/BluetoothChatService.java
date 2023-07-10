@@ -16,14 +16,18 @@
 
 package com.example.android.bluetoothchat;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+
+import androidx.core.app.ActivityCompat;
 
 import com.example.android.common.logger.Log;
 
@@ -53,6 +57,7 @@ public class BluetoothChatService {
             UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66");
 
     // Member fields
+    private Context context;
     private final BluetoothAdapter mAdapter;
     private final Handler mHandler;
     private AcceptThread mSecureAcceptThread;
@@ -74,7 +79,8 @@ public class BluetoothChatService {
      * @param context The UI Activity Context
      * @param handler A Handler to send messages back to the UI Activity
      */
-    public BluetoothChatService(Context context, Handler handler) {
+    public BluetoothChatService(Context activity, Handler handler) {
+        context = activity.getApplicationContext();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mNewState = mState;
@@ -201,6 +207,9 @@ public class BluetoothChatService {
         // Send the name of the connected device back to the UI Activity
         Message msg = mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NAME);
         Bundle bundle = new Bundle();
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimeException("BLUETOOTH_CONNECT permission denied");
+        }
         bundle.putString(Constants.DEVICE_NAME, device.getName());
         msg.setData(bundle);
         mHandler.sendMessage(msg);
@@ -308,6 +317,10 @@ public class BluetoothChatService {
             BluetoothServerSocket tmp = null;
             mSocketType = secure ? "Secure" : "Insecure";
 
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                throw new RuntimeException("BLUETOOTH_CONNECT permission denied");
+            }
+
             // Create a new listening server socket
             try {
                 if (secure) {
@@ -395,6 +408,10 @@ public class BluetoothChatService {
             BluetoothSocket tmp = null;
             mSocketType = secure ? "Secure" : "Insecure";
 
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                throw new RuntimeException("BLUETOOTH_CONNECT permission denied");
+            }
+
             // Get a BluetoothSocket for a connection with the
             // given BluetoothDevice
             try {
@@ -416,6 +433,9 @@ public class BluetoothChatService {
             Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
             setName("ConnectThread" + mSocketType);
 
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                throw new RuntimeException("BLUETOOTH_SCAN permission denied");
+            }
             // Always cancel discovery because it will slow down a connection
             mAdapter.cancelDiscovery();
 
